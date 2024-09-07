@@ -10,7 +10,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 public class ClientWindow extends JFrame implements ActionListener, TCPConnectionListener {
-    private static final String SERVER_ADDRESS = "10.110.90.37";
+    private static final String SERVER_ADDRESS = "10.193.91.173";
     private static final int PORT = 8189;
     private static final int WIDTH = 600;
     private static final int HEIGHT = 400;
@@ -34,8 +34,9 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
         setAlwaysOnTop(true);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
+        JScrollPane scroll = new JScrollPane(textArea);
         msgField.addActionListener(this);
-        add(textArea, BorderLayout.CENTER);
+        add(scroll, BorderLayout.CENTER);
         add(msgField, BorderLayout.SOUTH);
         add(nameField, BorderLayout.NORTH);
         setVisible(true);
