@@ -9,19 +9,19 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClientWindow extends JFrame implements ActionListener, TCPConnectionListener {
-    private static final String SERVER_ADDRESS = "10.110.126.155";
+    private static final String SERVER_ADDRESS = "10.193.94.178";
     private static final int PORT = 8189;
     private static final int WIDTH = 600;
     private static final int HEIGHT = 400;
     private final JTextArea textArea = new JTextArea();
     private final JTextField msgField = new JTextField("Hello world");
+    private final JComboBox<String> userToSend = new JComboBox<>();
+    private final DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
     private TCPConnection connection;
     private final String userName;
-    private final List<String> usernames;
     private final MSGDescriptor serializer;
 
     public static void main(String[] args) {
@@ -35,6 +35,7 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
     private ClientWindow() {
         serializer = new MSGDescriptor();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
         setSize(WIDTH, HEIGHT);
         setLocationRelativeTo(null);
         setAlwaysOnTop(true);
@@ -44,9 +45,9 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
         msgField.addActionListener(this);
         add(scroll, BorderLayout.CENTER);
         add(msgField, BorderLayout.SOUTH);
-
+        add(userToSend, BorderLayout.NORTH);
+        addUser("All");
         userName = JOptionPane.showInputDialog("Enter your nickname");
-        usernames = new ArrayList<>();
         setVisible(true);
         try {
             connection = new TCPConnection(this, SERVER_ADDRESS, PORT);
@@ -54,42 +55,53 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
             printMsg("TCP Exception: " + e);
         }
     }
-
+    public void addUser(String user) {
+        if (user.equals(userName)) return;
+        model.addElement(user);
+        userToSend.setModel(model);
+        this.add(userToSend, BorderLayout.NORTH);
+    }
+    public void addUsers(List<String> users) {
+        for (String user : users) addUser(user);
+    }
+    public void removeUser(String user) {
+        model.removeElement(user);
+        userToSend.setModel(model);
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
+        System.out.println(userToSend.getItemCount());
         String msg = msgField.getText();
         if (!connection.isClosed()) {
             msgField.setText(null);
-            connection.sendString(serializer.toJson(1, userName, msg));
+            connection.sendString(serializer.toJson(1, userName, (String) userToSend.getSelectedItem(), msg));
         }
     }
 
     @Override
     public void onConnectionReady(TCPConnection connection) {
-        System.out.println(usernames);
         connection.sendString(serializer.toJson(2, userName, userName));
     }
 
     @Override
     public void onReceiveString(TCPConnection connection, String value) {
-        System.out.println(usernames);
         if (value != null && !value.isEmpty()) {
             int type = serializer.fromJson(value).getType();
             if (type == 0) {
-                usernames.addAll(serializer.names(value));
+                addUsers(serializer.names(value));
             } else if (type == 2) {
                 String name = serializer.fromJson(value).getMessage();
-                usernames.add(name);
+                addUser(name);
                 printMsg(name + " is here now");
             } else if (type == 3) {
-                usernames.remove(serializer.fromJson(value).getMessage());
+                removeUser(serializer.fromJson(value).getMessage());
             } else printMsg(serializer.fromJson(value).toString());
         }
     }
 
     @Override
     public void onDisconnect(TCPConnection connection) {
-        connection.sendString(serializer.toJson(2, userName, userName));
+        connection.sendString(serializer.toJson(3, userName, userName));
         printMsg("Client disconnected: " + connection);
     }
 

@@ -65,6 +65,7 @@ public class ChatServer implements TCPConnectionListener {
     @Override
     public synchronized void onReceiveString(TCPConnection connection, String value) {
         String msg = serializer.fromJson(value).getMessage();
+
         List<String> badWords = checkMessage(msg);
         boolean canSend = true;
         if (badWords.isEmpty()) {
@@ -90,7 +91,14 @@ public class ChatServer implements TCPConnectionListener {
                 connection.closeConnection();
             } else connectionsRate.put(connection, curRate);
         }
-        if (canSend) sendToAll(value);
+        if (canSend) {
+            String addr = serializer.fromJson(value).getUserToReceive();
+            if (addr == null || addr.equals("All")) sendToAll(value);
+            else if (usernamesToTcp.containsKey(addr)) {
+                usernamesToTcp.get(addr).sendString(value);
+                connection.sendString(value);
+            }
+        }
     }
 
     @Override
