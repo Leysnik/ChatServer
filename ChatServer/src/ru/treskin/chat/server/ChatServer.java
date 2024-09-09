@@ -62,34 +62,40 @@ public class ChatServer implements TCPConnectionListener {
                                                                         .toList()));
     }
 
+    private boolean registerUser(TCPConnection connection, String msg) {
+        int type = serializer.fromJson(msg).getType();
+        if (type == 2) {
+            if (isNameCorrect(msg)) {
+                usernamesToTcp.put(msg, connection);
+                tcpToUsernames.put(connection, msg);
+            } else {
+                onDisconnect(connection);
+                return false;
+            }
+        }
+        return true;
+    }
+    private void changeUserBadWordsLimit(TCPConnection connection, List<String> badWords) {
+        int curRate = connectionsRate.getOrDefault(connection, 0) + 1;
+        connection.sendString(serializer
+                .toJson(1, SERVER_NAME, "You used this bad words: " + badWords + "\nYou shouldn't do this more"));
+        if (curRate > LIMIT_OF_BAD_MSG) {
+            connection.sendString(serializer
+                    .toJson(1, SERVER_NAME, "You sent to much bad messages! Godbye:)"));
+            onDisconnect(connection);
+            connection.closeConnection();
+        } else connectionsRate.put(connection, curRate);
+    }
     @Override
     public synchronized void onReceiveString(TCPConnection connection, String value) {
         String msg = serializer.fromJson(value).getMessage();
-
         List<String> badWords = checkMessage(msg);
         boolean canSend = true;
         if (badWords.isEmpty()) {
-            int type = serializer.fromJson(value).getType();
-            if (type == 2) {
-                if (isNameCorrect(msg)) {
-                    usernamesToTcp.put(msg, connection);
-                    tcpToUsernames.put(connection, msg);
-                } else {
-                    onDisconnect(connection);
-                    canSend = false;
-                }
-            }
+            canSend = registerUser(connection, value);
         } else {
             canSend = false;
-            int curRate = connectionsRate.getOrDefault(connection, 0) + 1;
-            connection.sendString(serializer
-                    .toJson(1, SERVER_NAME, "You used this bad words: " + badWords + "\nYou shouldn't do this more"));
-            if (curRate > LIMIT_OF_BAD_MSG) {
-                connection.sendString(serializer
-                        .toJson(1, SERVER_NAME, "You sent to much bad messages! Godbye:)"));
-                onDisconnect(connection);
-                connection.closeConnection();
-            } else connectionsRate.put(connection, curRate);
+            changeUserBadWordsLimit(connection, badWords);
         }
         if (canSend) {
             String addr = serializer.fromJson(value).getUserToReceive();
