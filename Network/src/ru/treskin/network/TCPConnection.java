@@ -58,6 +58,9 @@ public class TCPConnection {
             listener.onException(TCPConnection.this, e);
         }
     }
+    public boolean isClosed() {
+        return socket.isClosed();
+    }
 
     @Override
     public String toString() {
