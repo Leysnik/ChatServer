@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 
 public class ClientWindow extends JFrame implements ActionListener, TCPConnectionListener {
-    private static final String SERVER_ADDRESS = "10.193.94.178";
+    private static final String SERVER_ADDRESS = "10.110.126.14";
     private static final int PORT = 8189;
     private static final int WIDTH = 600;
     private static final int HEIGHT = 400;
@@ -34,8 +34,8 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
     }
     private ClientWindow() {
         serializer = new MSGDescriptor();
+        //Swing Jframe Elements properties to show
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
         setSize(WIDTH, HEIGHT);
         setLocationRelativeTo(null);
         setAlwaysOnTop(true);

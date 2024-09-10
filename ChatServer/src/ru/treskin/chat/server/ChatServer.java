@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ChatServer implements TCPConnectionListener {
-    private final List<TCPConnection> connections;
     private final Map<TCPConnection, Integer> connectionsRate;
     private final MSGFilter filter;
     private final MSGDescriptor serializer;
@@ -26,7 +25,6 @@ public class ChatServer implements TCPConnectionListener {
     }
     private ChatServer() {
         serializer = new MSGDescriptor();
-        connections = new ArrayList<>();
         connectionsRate = new HashMap<>();
         usernamesToTcp = new HashMap<>();
         tcpToUsernames = new HashMap<>();
@@ -52,11 +50,11 @@ public class ChatServer implements TCPConnectionListener {
         return currentBadWords;
     }
     private boolean isNameCorrect(String name) {
-        return !usernamesToTcp.containsKey(name);
+        //checks that new user have unique nickname and nickname consist of letters only
+        return !usernamesToTcp.containsKey(name) && name.matches("\\w+");
     }
     @Override
     public synchronized void onConnectionReady(TCPConnection connection) {
-        connections.add(connection);
         connection.sendString(serializer.toJson(0, SERVER_NAME, usernamesToTcp.keySet()
                                                                         .stream()
                                                                         .toList()));
@@ -64,10 +62,11 @@ public class ChatServer implements TCPConnectionListener {
 
     private boolean registerUser(TCPConnection connection, String msg) {
         int type = serializer.fromJson(msg).getType();
+        String name = serializer.fromJson(msg).getName();
         if (type == 2) {
-            if (isNameCorrect(msg)) {
-                usernamesToTcp.put(msg, connection);
-                tcpToUsernames.put(connection, msg);
+            if (isNameCorrect(name)) {
+                usernamesToTcp.put(name, connection);
+                tcpToUsernames.put(connection, name);
             } else {
                 onDisconnect(connection);
                 return false;
@@ -98,10 +97,10 @@ public class ChatServer implements TCPConnectionListener {
             changeUserBadWordsLimit(connection, badWords);
         }
         if (canSend) {
-            String addr = serializer.fromJson(value).getUserToReceive();
-            if (addr == null || addr.equals("All")) sendToAll(value);
-            else if (usernamesToTcp.containsKey(addr)) {
-                usernamesToTcp.get(addr).sendString(value);
+            String userToSend = serializer.fromJson(value).getUserToReceive();
+            if (userToSend == null || userToSend.equals("All")) sendToAll(value);
+            else if (usernamesToTcp.containsKey(userToSend)) {
+                usernamesToTcp.get(userToSend).sendString(value);
                 connection.sendString(value);
             }
         }
@@ -109,7 +108,6 @@ public class ChatServer implements TCPConnectionListener {
 
     @Override
     public synchronized void onDisconnect(TCPConnection connection) {
-        connections.remove(connection);
         connectionsRate.remove(connection);
         connection.closeConnection();
         usernamesToTcp.remove(tcpToUsernames.get(connection));
@@ -124,6 +122,6 @@ public class ChatServer implements TCPConnectionListener {
         System.out.println("TCP exception: " + e);
     }
     private void sendToAll(String msg) {
-        for (TCPConnection connection : connections) connection.sendString(msg);
+        for (TCPConnection connection : tcpToUsernames.keySet()) connection.sendString(msg);
     }
 }
