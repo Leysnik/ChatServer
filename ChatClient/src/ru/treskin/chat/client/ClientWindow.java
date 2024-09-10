@@ -20,9 +20,9 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
     private final JTextField msgField = new JTextField("Hello world");
     private final JComboBox<String> userToSend = new JComboBox<>();
     private final DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-    private TCPConnection connection;
     private final String userName;
     private final MSGDescriptor serializer;
+    private TCPConnection connection;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -117,6 +117,5 @@ public class ClientWindow extends JFrame implements ActionListener, TCPConnectio
                 textArea.setCaretPosition(textArea.getDocument().getLength());
             }
         });
-
     }
 }

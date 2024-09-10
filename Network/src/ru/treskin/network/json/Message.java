@@ -3,11 +3,11 @@ package ru.treskin.network.json;
 import java.util.List;
 
 public class Message {
-    protected int idType;
-    protected String userName;
-    protected String userTo;
-    protected String msg;
-    protected List<String> usernames;
+    private final int idType;
+    private final String userName;
+    private String userTo;
+    private String msg;
+    private List<String> usernames;
 
     public Message(int type, String name, String to, String msg) {
         idType = type;

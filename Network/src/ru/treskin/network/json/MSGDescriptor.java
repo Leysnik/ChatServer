@@ -25,4 +25,3 @@ public class MSGDescriptor {
         return gson.fromJson(msg, Message.class).getUsers();
     }
 }
-

@@ -36,7 +36,6 @@ public class TCPConnection {
                 } finally {
                     listener.onDisconnect(TCPConnection.this);
                 }
-
             }
         });
         rxThread.start();

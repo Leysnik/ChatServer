@@ -16,10 +16,10 @@ public class MSGFilter {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(path));
+            return reader.lines().toList();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-        return (reader == null ? new ArrayList() : reader.lines().toList());
     }
     public int checkWord(String word) {
         return wordTrie.hasWord(word);
